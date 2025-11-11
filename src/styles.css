@@ -1,0 +1,84 @@
+/* Layout helpers (no Tailwind @apply in CDN mode) */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  border: 1px solid #cbd5e1; /* slate-300 */
+  background: #fff;
+}
+.btn-action:hover { background: #f8fafc; } /* slate-50 */
+
+/* Destaque para campos editáveis no formulário */
+#form-column input[type="text"],
+#form-column input[type="number"],
+#form-column input[type="date"],
+#form-column textarea,
+#form-column select {
+  background-color: #fefce8; /* amarelo claro - destaque sutil */
+  transition: background-color .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+#form-column input[type="text"]:focus,
+#form-column input[type="number"]:focus,
+#form-column input[type="date"]:focus,
+#form-column textarea:focus,
+#form-column select:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #0ea5e9; /* sky-500 */
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.20);
+}
+
+/* Printable “paper” look */
+.paper {
+  width: 210mm;           /* A4 width */
+  min-height: 297mm;      /* A4 height */
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e5e7eb; /* slate-200 */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+.paper-inner { padding: 18mm; }
+
+/* Document-ish styles inside the preview */
+.doc-title { font-size: 16pt; font-weight: 700; text-align: center; margin-bottom: 10mm; }
+.doc-section-title { font-weight: 600; margin: 10px 0 4px; }
+.doc-small { font-size: 10pt; color: #334155; }
+.doc-paragraph { margin: 8px 0; line-height: 1.4; text-align: justify; }
+
+/* Checkbox-like squares rendered via template helpers */
+.box {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 1px solid #334155; /* slate-700 */
+  margin-right: 6px; vertical-align: -2px;
+  position: relative; border-radius: 2px;
+}
+.box.checked::after {
+  content: "\2713"; /* checkmark */
+  position: absolute; left: 1px; top: -3px;
+  font-size: 16px; color: #111827; /* gray-900 */
+}
+
+/* Print rules: print only the preview area as A4 */
+@media print {
+  body { background: #fff !important; }
+  header, #form-column, .border-b, .border-t, .btn-action, .template-controls, .editor-overlay { display: none !important; }
+  main { padding: 0 !important; }
+  /* Quebra o layout de 2 colunas para largura total */
+  main .flex { display: block !important; }
+  #preview-column { width: 100% !important; flex: none !important; border: none !important; }
+  #preview-scroll { padding: 0 !important; }
+  /* A folha deve ocupar toda a área imprimível (respeita @page) */
+  .paper { box-shadow: none !important; border: none !important; width: 100% !important; max-width: none !important; min-height: auto !important; margin: 0 !important; }
+  .paper-inner { padding: 0 !important; }
+}
+
+/* Page size for printing */
+@page {
+  size: A4;
+  margin: 12mm;
+}

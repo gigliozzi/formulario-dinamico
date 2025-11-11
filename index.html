@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Formulário + Visualizador em Tempo Real</title>
+    <!-- Tailwind via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body class="bg-slate-100 text-slate-800">
+    <header class="w-full bg-white border-b border-slate-200">
+      <div class="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <h1 class="text-lg font-semibold">Sistema de Formulário com Visualização de Impressão</h1>
+        <div class="text-sm text-slate-500">Demo • Tailwind + Vue 3</div>
+      </div>
+    </header>
+
+    <main id="app" class="max-w-screen-2xl mx-auto px-4 py-4">
+      <div class="flex gap-4 h-[calc(100vh-110px)]">
+        <!-- Coluna Esquerda: Formulário (35%) -->
+        <section id="form-column" class="basis-[35%] w-[35%] bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden">
+          <div class="px-4 pt-4 pb-2 border-b border-slate-200">
+            <label class="block text-xs font-medium text-slate-500 mb-1">Modelo de Documento</label>
+            <div class="flex items-center gap-2">
+              <select v-model="currentTemplateId" @change="onTemplateChange" class="w-full rounded-md border-slate-300 text-sm">
+                <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
+              </select>
+              <button @click="openTemplateEditor" class="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-slate-300 hover:bg-slate-50" title="Criar novo template">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Novo Template</span>
+              </button>
+              <button @click="triggerImport" class="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-slate-300 hover:bg-slate-50" title="Importar Template (JSON)">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                <span>Importar JSON</span>
+              </button>
+              <input ref="importInput" type="file" accept="application/json,.json" class="hidden" @change="handleImport" />
+            </div>
+          </div>
+
+          <!-- Área de Formulário rolável -->
+          <div class="flex-1 overflow-y-auto p-4">
+            <form @submit.prevent class="space-y-4">
+              <template v-for="field in (currentTemplate?.fields || [])" :key="field.id">
+                <div v-if="field.type === 'text' || field.type === 'date' || field.type === 'number'" class="">
+                  <label class="block text-sm font-medium mb-1">{{ field.label }}</label>
+                  <input :type="field.type" v-model="formData[field.id]" :placeholder="field.placeholder || ''" class="w-full rounded-md border-slate-300" @input="onTextInput(field, $event)" />
+                </div>
+
+                <div v-else-if="field.type === 'textarea'">
+                  <label class="block text-sm font-medium mb-1">{{ field.label }}</label>
+                  <textarea rows="3" v-model="formData[field.id]" :placeholder="field.placeholder || ''" class="w-full rounded-md border-slate-300"></textarea>
+                </div>
+
+                <div v-else-if="field.type === 'select'">
+                  <label class="block text-sm font-medium mb-1">{{ field.label }}</label>
+                  <select v-model="formData[field.id]" class="w-full rounded-md border-slate-300">
+                    <option v-for="opt in field.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  </select>
+                </div>
+
+                <div v-else-if="field.type === 'radio'">
+                  <label class="block text-sm font-medium mb-1">{{ field.label }}</label>
+                  <div class="flex flex-wrap gap-4">
+                    <label v-for="opt in field.options" :key="opt.value" class="inline-flex items-center gap-2 text-sm">
+                      <input type="radio" :name="field.id" :value="opt.value" v-model="formData[field.id]" />
+                      <span>{{ opt.label }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div v-else-if="field.type === 'checkbox'" class="">
+                  <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" v-model="formData[field.id]" />
+                    <span class="font-medium">{{ field.label }}</span>
+                  </label>
+                </div>
+
+                <div v-else-if="field.type === 'checkboxes'">
+                  <div class="text-sm font-medium mb-1">{{ field.label }}</div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label v-for="item in field.items" :key="item.id" class="inline-flex items-center gap-2 text-sm">
+                      <input type="checkbox" v-model="formData[item.id]" />
+                      <span>{{ item.label }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Parcelas dinâmicas -->
+                <div v-else-if="field.type === 'installments'">
+                  <label class="block text-sm font-medium mb-2">{{ field.label || 'Parcelas' }}</label>
+                  <div class="overflow-x-auto border border-slate-200 rounded-md">
+                    <table class="min-w-full text-sm">
+                      <thead class="bg-slate-50">
+                        <tr>
+                          <th class="text-left px-3 py-2 w-20">Parcela</th>
+                          <th class="text-left px-3 py-2 w-48">Vencimento</th>
+                          <th class="text-left px-3 py-2 w-48">Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="(parc, i) in (formData.parcelas || [])" :key="i" class="border-t">
+                          <td class="px-3 py-2">{{ i + 1 }}ª</td>
+                          <td class="px-3 py-2">
+                            <input type="date" v-model="parc.venc" class="w-full rounded-md border-slate-300" />
+                          </td>
+                          <td class="px-3 py-2">
+                            <input type="text" v-model="parc.valor" @input="onInstallmentInput(i, 'valor', $event)" class="w-full rounded-md border-slate-300" placeholder="R$ 0,00" />
+                          </td>
+                        </tr>
+                        <tr v-if="(formData.parcelas || []).length === 0">
+                          <td colspan="3" class="px-3 py-4 text-slate-500">Defina a quantidade em "Quantidade de parcelas" para gerar as linhas.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </template>
+            </form>
+          </div>
+
+          <!-- Barra de Ações -->
+          <div class="border-t border-slate-200 p-3 bg-slate-50">
+            <div class="flex flex-wrap items-center gap-2">
+              <button @click="saveForm" class="btn-action">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Salvar</span>
+              </button>
+              <button @click="printPreview" class="btn-action">
+                <i class="fa-solid fa-print"></i>
+                <span>Imprimir</span>
+              </button>
+              <button @click="printBlank" class="btn-action">
+                <i class="fa-regular fa-file"></i>
+                <span>Imprimir em branco</span>
+              </button>
+              <button @click="resetForm" class="btn-action">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Novo Formulário</span>
+              </button>
+              <span v-if="toast" class="ml-auto text-xs text-emerald-700">{{ toast }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Coluna Direita: Visualizador (65%) -->
+        <section id="preview-column" class="basis-[65%] w-[65%] bg-slate-50 rounded-lg border border-slate-200 overflow-hidden flex flex-col">
+          <div class="px-4 py-3 border-b border-slate-200 text-sm text-slate-600">Visualização de Impressão</div>
+          <div class="flex-1 overflow-auto p-2 md:p-4" id="preview-scroll">
+            <div id="print-area" class="paper shadow">
+              <div class="paper-inner" v-html="renderedHTML"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Editor/Criação de Template (simulado) -->
+      <div v-if="showTemplateEditor" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+        <div class="bg-white w-[min(900px,95vw)] h-[min(80vh,800px)] rounded-lg shadow-lg border border-slate-200 flex flex-col">
+          <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="font-semibold">Novo Template (Mock API)</h3>
+            <button @click="showTemplateEditor=false" class="text-slate-500 hover:text-slate-800"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="p-4 flex-1 overflow-auto">
+            <p class="text-sm text-slate-600 mb-2">Cole/edite o JSON do template. Campos suportados: <code>id</code>, <code>name</code>, <code>fields</code>, <code>previewHTML</code>.</p>
+            <textarea v-model="templateDraft" class="w-full h-full font-mono text-xs leading-5 border-slate-300 rounded-md"></textarea>
+          </div>
+          <div class="p-3 border-t border-slate-200 flex items-center justify-end gap-2 bg-slate-50">
+            <button @click="showTemplateEditor=false" class="px-3 py-2 rounded-md border border-slate-300 text-sm">Cancelar</button>
+            <button @click="saveNewTemplate" class="px-3 py-2 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-700">Salvar Template</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- App code -->
+    <script src="src/templates.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+  </html>
