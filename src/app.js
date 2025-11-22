@@ -296,6 +296,36 @@ const App = {
       this.templateDraft = JSON.stringify(templateSkeleton(), null, 2);
       this.showTemplateEditor = true;
     },
+    exportWord() {
+      const content = this.renderedHTML || '';
+      const htmlDoc = `<!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>${this.currentTemplate?.name || 'documento'}</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #111827; margin: 20mm; }
+          .doc-title { font-size: 16pt; font-weight: 700; text-align: center; margin-bottom: 10mm; }
+          .doc-section-title { font-weight: 600; margin: 10px 0 4px; }
+          .doc-small { font-size: 10pt; color: #334155; }
+          .doc-paragraph { margin: 8px 0; line-height: 1.4; text-align: justify; }
+          .box { display: inline-block; width: 14px; height: 14px; border: 1px solid #334155; margin-right: 6px; vertical-align: -2px; position: relative; border-radius: 2px; }
+          .box.checked::after { content: "\\2713"; position: absolute; left: 1px; top: -3px; font-size: 16px; color: #111827; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #cbd5e1; padding: 4px; }
+        </style>
+      </head>
+      <body>${content}</body>
+      </html>`;
+      const blob = new Blob(['\ufeff', htmlDoc], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const filename = `${(this.currentTemplate?.id || 'documento')}.doc`;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    },
     saveNewTemplate() {
       try {
         const tpl = JSON.parse(this.templateDraft);

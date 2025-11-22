@@ -1,0 +1,15 @@
+# Editor
+.vscode/
+.idea/
+
+# Dependencies / builds
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

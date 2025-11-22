@@ -11,6 +11,15 @@
 }
 .btn-action:hover { background: #f8fafc; } /* slate-50 */
 
+/* Inline SVG icons */
+.icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
 /* Destaque para campos editáveis no formulário */
 #form-column input[type="text"],
 #form-column input[type="number"],
