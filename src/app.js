@@ -304,7 +304,9 @@ const App = {
         <meta charset="utf-8" />
         <title>${this.currentTemplate?.name || 'documento'}</title>
         <style>
-          body { font-family: Arial, sans-serif; color: #111827; margin: 20mm; }
+          /* Margens padrão do Word: 2,54 cm (1 polegada) em todos os lados */
+          @page { size: A4; margin: 25.4mm; }
+          body { font-family: Arial, sans-serif; color: #111827; margin: 25.4mm; }
           .doc-title { font-size: 16pt; font-weight: 700; text-align: center; margin-bottom: 10mm; }
           .doc-section-title { font-weight: 600; margin: 10px 0 4px; }
           .doc-small { font-size: 10pt; color: #334155; }
